@@ -116,22 +116,18 @@ void armEscs(void) {
   if ((gunState == GUN_STATE_SHUTDOWN) || (gunState == GUN_STATE_DISARM)) {
     // Initialize ESC at minimum throttle
     esc.writeMicroseconds(0);
-    Serial.println("esc.writeMicroseconds(0)");
 
     delay(2000); // Wait for a short period
     
     // Initialize ESC at minimum throttle
     esc.writeMicroseconds(flywhillIdlePwm);
-    Serial.println("esc.writeMicroseconds(flywhillIdlePwm)");
     delay(5000); // Wait for a short period
-    Serial.println("esc is armed");
   }
 }
 
 void disarmEscs(void) {
   esc.writeMicroseconds(0);
   if((gunStatePrev != GUN_STATE_SHUTDOWN) || (gunState != GUN_STATE_DISARM)) {
-    Serial.println("esc is disarmed");
   }
 }
 
@@ -193,6 +189,7 @@ void handleShot(void) {
 }
 
 static void setGunStateToShutdown(void) {
+    Serial.print(GUN_STATE_SHUTDOWN);
     disarmEscs();
     elevationServo.centrelize();
     azimuthServo.centrelize();
@@ -245,26 +242,26 @@ void loop() {
       else {
         switch (gunCommand) {
           case GUN_STATE_SHUTDOWN:
-            Serial.print("4 ");
             setGunStateToShutdown();
             break;
           case GUN_STATE_DISARM:
-            Serial.print("5 ");
+            Serial.print(GUN_STATE_DISARM);
             disarmEscs();
             gunState = GUN_STATE_DISARM;
             break;
           case GUN_STATE_ARM:
-            Serial.print("6 ");
+            setGunStateToArm
+            Serial.print(GUN_STATE_ARM);
             armEscs();
             gunState = GUN_STATE_ARM;
             break;
           case GUN_STATE_FIRE:
-            Serial.print("7 ");
+            Serial.print(GUN_STATE_FIRE);
             shootNow();
             gunState = GUN_STATE_FIRE;
             break;
           case GUN_STATE_RELOADED:
-            Serial.print("8 ");
+            Serial.print(GUN_STATE_RELOADED);
             default:
             break;
         }
@@ -272,7 +269,6 @@ void loop() {
     }
   }
   else if ((millis() - lastRecivedCommandTimestamp) > maxTargetLossTime) {
-      Serial.println("9 ");
       setGunStateToShutdown();
   }
 
