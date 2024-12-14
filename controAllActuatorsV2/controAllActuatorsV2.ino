@@ -24,7 +24,7 @@ gunStates_e gunStatePrev = GUN_STATE_SHUTDOWN;
 // general parameters
 int maxTargetLossTime = 1000;
 int shotFiredCounter = 0;
-int maxShotsInMagazin = 3;
+int maxShotsInMagazin = 10;
 
 // shot mechanism parameters:
 int durationForMotorsToSpeedUpMs = 1000;
@@ -115,20 +115,12 @@ Servo esc; // Create a Servo object to control the ESC
 void armEscs(void) {
   if ((gunState == GUN_STATE_SHUTDOWN) || (gunState == GUN_STATE_DISARM)) {
     // Initialize ESC at minimum throttle
-    esc.writeMicroseconds(0);
-
-    delay(2000); // Wait for a short period
-    
-    // Initialize ESC at minimum throttle
     esc.writeMicroseconds(flywhillIdlePwm);
-    delay(5000); // Wait for a short period
   }
 }
 
 void disarmEscs(void) {
-  esc.writeMicroseconds(0);
-  if((gunStatePrev != GUN_STATE_SHUTDOWN) || (gunState != GUN_STATE_DISARM)) {
-  }
+  esc.writeMicroseconds(flywhillIdlePwm);
 }
 
 
@@ -189,11 +181,32 @@ void handleShot(void) {
 }
 
 static void setGunStateToShutdown(void) {
-    Serial.print(GUN_STATE_SHUTDOWN);
     disarmEscs();
     elevationServo.centrelize();
-    azimuthServo.centrelize();
+    azimuthServo.centrelize();  
     gunState = GUN_STATE_SHUTDOWN;
+}
+
+void publishStateToMissionController() {
+  static unsigned long lastPublishTime = 0;
+  unsigned long currentTime = millis();
+
+  if (currentTime - lastPublishTime >= 500) { // Publish every 100ms
+    int dartsLeftInMagazine = maxShotsInMagazin - shotFiredCounter;
+    int azimuth = (int)azimuthServo.getPosition();
+    int elevation = (int)elevationServo.getPosition();
+
+    Serial.print("S:");
+    Serial.print(gunState);
+    Serial.print(",D:");
+    Serial.print(dartsLeftInMagazine);
+    Serial.print(",A:");
+    Serial.print(azimuth);
+    Serial.print(",E:");
+    Serial.println(elevation);
+
+    lastPublishTime = currentTime;
+  }
 }
 
 void setup() {
@@ -203,6 +216,7 @@ void setup() {
   triggerServo.attach(6);
   esc.attach(9);
   shotFiredCounter = 0;
+  setShotStateToIdle();
   setGunStateToShutdown();
 }
 
@@ -245,23 +259,18 @@ void loop() {
             setGunStateToShutdown();
             break;
           case GUN_STATE_DISARM:
-            Serial.print(GUN_STATE_DISARM);
             disarmEscs();
             gunState = GUN_STATE_DISARM;
             break;
           case GUN_STATE_ARM:
-            setGunStateToArm
-            Serial.print(GUN_STATE_ARM);
             armEscs();
             gunState = GUN_STATE_ARM;
             break;
           case GUN_STATE_FIRE:
-            Serial.print(GUN_STATE_FIRE);
             shootNow();
             gunState = GUN_STATE_FIRE;
             break;
           case GUN_STATE_RELOADED:
-            Serial.print(GUN_STATE_RELOADED);
             default:
             break;
         }
@@ -276,6 +285,7 @@ void loop() {
   elevationServo.update();
   azimuthServo.update();
   handleShot();
+  publishStateToMissionController();
   gunStatePrev = gunState;
   delay(pidLoopDelayMs); // Delay for smoother updates
 }
