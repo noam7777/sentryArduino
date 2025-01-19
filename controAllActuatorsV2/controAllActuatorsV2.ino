@@ -29,7 +29,7 @@ int maxShotsInMagazin = 10;
 // shot mechanism parameters:
 int durationForMotorsToSpeedUpMs = 1000;
 int durationForTriggerToMoveFarwardMs = 700;
-int triggerServoForwardPos = 70;
+int triggerServoForwardPos = 100;
 int triggerServoBackPos = 13;
 int flywhillIdlePwm = 990;
 int flywhillSpinPwm = 1150;
@@ -107,7 +107,7 @@ public:
 };
 
 // Create ServoController objects for each servo
-ServoController elevationServo(3, 69, 167); // elevation Servo on pin 3 with limits 69° to 167
+ServoController elevationServo(3, 69, 167, true); // elevation Servo on pin 3 with limits 69° to 167
 ServoController azimuthServo(5, 5, 175); // azimuth Servo on pin 5, assembled backwards
 Servo triggerServo;
 Servo esc; // Create a Servo object to control the ESC
